@@ -25,7 +25,7 @@ cd aneval
 
 ### 2. Install dependencies
 
-We recommend using [Poetry](https://python-poetry.org/) for dependency management:
+I Recommend using [Poetry](https://python-poetry.org/) for dependency management:
 
 ```bash
 poetry install
