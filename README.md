@@ -62,7 +62,7 @@ This will create `aneval/stock_news_summarized.json`.
 ### 5. Run the Streamlit app
 
 ```bash
-streamlit run src/frontend/app.py
+poetry run streamlit run src/frontend/app.py
 ```
 
 ---
