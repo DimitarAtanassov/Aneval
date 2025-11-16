@@ -84,6 +84,22 @@ def send_to_llm_judge(article_obj):
     st.session_state["geval_summary_area"] = article_obj.summary
     st.rerun()
 
+# --- Async runner for LLM-as-a-Judge (parallelizes all LLM calls) ---
+async def run_llm_judge_parallel(llm, summary, article, questions, judge_prompt_text):
+    async def answer_summary(q):
+        return await asyncio.to_thread(
+            llm.answer_question, f"{judge_prompt_text}\n\nContext:\n{summary}", q
+        )
+    async def answer_article(q):
+        return await asyncio.to_thread(
+            llm.answer_question, f"{judge_prompt_text}\n\nContext:\n{article}", q
+        )
+    summary_tasks = [answer_summary(q) for q in questions]
+    article_tasks = [answer_article(q) for q in questions]
+    summary_answers = await asyncio.gather(*summary_tasks)
+    article_answers = await asyncio.gather(*article_tasks)
+    return summary_answers, article_answers
+
 # --- Tabs at the top ---
 tabs = st.tabs(["News", "LLM Judge Results", "Geval Results"])
 
@@ -141,19 +157,9 @@ with tabs[1]:
             summary = st.session_state.get("judge_summary_area", "")
             article = st.session_state.get("judge_article_area", "")
             judge_prompt_text = st.session_state.get("judge_prompt_area", LLM_JUDGE_PROMPT)
-            summary_answers = []
-            article_answers = []
-            for q in questions:
-                try:
-                    summary_ans = llm.answer_question(f"{judge_prompt_text}\n\nContext:\n{summary}", q)
-                except Exception as e:
-                    summary_ans = f"Error: {e}"
-                try:
-                    article_ans = llm.answer_question(f"{judge_prompt_text}\n\nContext:\n{article}", q)
-                except Exception as e:
-                    article_ans = f"Error: {e}"
-                summary_answers.append(summary_ans)
-                article_answers.append(article_ans)
+            summary_answers, article_answers = asyncio.run(
+                run_llm_judge_parallel(llm, summary, article, questions, judge_prompt_text)
+            )
             st.session_state["llm_judge_results"] = {
                 "questions": questions,
                 "summary_answers": summary_answers,
@@ -161,7 +167,7 @@ with tabs[1]:
             }
             st.session_state["llm_judge_title"] = st.session_state.get("judge_title", "")
             st.session_state["llm_judge_evaluating"] = False
-            st.rerun()
+            st.rerun()()
     elif "llm_judge_results" in st.session_state:
         questions = st.session_state["llm_judge_results"]["questions"]
         summary_answers = st.session_state["llm_judge_results"]["summary_answers"]
@@ -295,7 +301,7 @@ with side_tabs[0]:
 
     if st.button("Evaluate with LLM-as-a-Judge"):
         st.session_state["llm_judge_evaluating"] = True
-        st.rerun()
+        st.rerun()()
 
 # --- Geval Tab ---
 with side_tabs[1]:
