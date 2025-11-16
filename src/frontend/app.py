@@ -241,24 +241,24 @@ with tabs[2]:
         geval_summary = st.session_state.get("geval_summary_area", "")
         for metric, result in geval_results.items():
             with st.expander(f"{metric}"):
-                st.markdown("**Prompt:**")
+                st.markdown("**Prompt Used:**")
                 # Dynamically fill the prompt for traceability
                 if metric == "Coherence":
-                    prompt = COHERENCE_PROMPT
+                    prompt_template = COHERENCE_PROMPT
                 elif metric == "Consistency":
-                    prompt = CONSISTENCY_PROMPT
+                    prompt_template = CONSISTENCY_PROMPT
                 elif metric == "Fluency":
-                    prompt = FLUENCY_PROMPT
+                    prompt_template = FLUENCY_PROMPT
                 elif metric == "Relevance":
-                    prompt = RELEVANCE_PROMPT
+                    prompt_template = RELEVANCE_PROMPT
                 else:
-                    prompt = ""
-                prompt_filled = prompt.replace("{{Document}}", geval_article).replace("{{Summary}}", geval_summary)
+                    prompt_template = ""
+                prompt_filled = prompt_template.replace("{{Document}}", geval_article).replace("{{Summary}}", geval_summary)
                 st.markdown(
-                f'<div style="max-height:300px;overflow:auto;padding-right:8px">'
-                f'<pre style="white-space:pre-wrap">{prompt_filled}</pre>'
-                f'</div>',
-                unsafe_allow_html=True
+                    f'<div style="max-height:300px;overflow:auto;padding-right:8px">'
+                    f'<pre style="white-space:pre-wrap">{prompt_filled}</pre>'
+                    f'</div>',
+                    unsafe_allow_html=True
                 )
                 st.markdown("**GPT-5 Evaluation Rank:**")
                 st.success(result.rank if hasattr(result, "rank") else result)

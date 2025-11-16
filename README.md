@@ -121,6 +121,12 @@ MIT License
 
 ---
 
+## Attribution
+
+The Geval prompts used in this project are adapted from [nlpyang/geval](https://github.com/nlpyang/geval).
+
+---
+
 ## Contact
 
 For questions or contributions, open an issue or contact [Dimitar Atanassov](mailto:dimitar.atanassovse@gmail.com).
