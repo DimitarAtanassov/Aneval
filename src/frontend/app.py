@@ -73,7 +73,7 @@ st.markdown(
 )
 PAGE_SIZE = 10
 st.title("Stock News")
-st.caption("Minimalist news dashboard. Showing parsed news from `stock_news.json`.")
+st.caption("Minimalist news dashboard. Showing parsed news from `stock_news_summarized.json`.")
 
 # --- Load news articles ---
 def load_news_articles(path="stock_news_summarized.json"):
