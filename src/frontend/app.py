@@ -197,13 +197,6 @@ with tabs[1]:
         judge_prompt = st.session_state.get("judge_prompt_area", LLM_JUDGE_PROMPT)
         for idx, q in enumerate(questions):
             with st.expander(f"Q{idx+1}: {q}"):
-                st.markdown("**Prompt Used:**")
-                st.markdown(
-                    f'<div style="max-height:300px;overflow:auto;padding-right:8px">'
-                    f'<pre style="white-space:pre-wrap">{judge_prompt}</pre>'
-                    f'</div>',
-                    unsafe_allow_html=True
-                )
                 st.markdown("**Summary Answer:**")
                 st.info(summary_answers[idx])
                 st.markdown("**Article Answer:**")

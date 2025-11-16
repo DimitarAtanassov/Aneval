@@ -14,17 +14,21 @@ NEWS_SUMMARY_PROMPT = (
 )
 
 class GeminiLLM:
-    def __init__(self, api_key: str = None, model_name: str = None):
+    def __init__(self, api_key: str = None, model_name: str = None, temperature: float = None):
         if api_key is None:
             api_key = os.getenv("GEMINI_API_KEY")
         if model_name is None:
             model_name = os.getenv("GEMINI_LLM", "gemini-2.5-flash")
+        if temperature is None:
+            # Default to 0.7 if not set in env
+            temperature = float(os.getenv("GEMINI_TEMP", 0.7))
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel(model_name)
+        self.temperature = temperature
 
     def answer_question(self, context: str, question: str) -> str:
         prompt = f"Context:\n{context}\n\nQuestion: {question}\nAnswer:"
-        response = self.model.generate_content(prompt)
+        response = self.model.generate_content(prompt, generation_config={"temperature": self.temperature})
         return response.text.strip()
 
     def summarize_news_article(self, article, prompt: str = NEWS_SUMMARY_PROMPT) -> LLMNewsArticle:
@@ -33,7 +37,7 @@ class GeminiLLM:
             f"Article:\n{article.full_text}\n\n"
             f"Summary:"
         )
-        response = self.model.generate_content(prompt)
+        response = self.model.generate_content(prompt, generation_config={"temperature": self.temperature})
         summary = response.text.strip()
         return LLMNewsArticle(
             title=article.title,
@@ -41,4 +45,4 @@ class GeminiLLM:
             ticker=article.ticker,
             full_text=article.full_text,
             summary=summary
-        ) 
+        )

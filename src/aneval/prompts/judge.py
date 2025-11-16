@@ -22,6 +22,7 @@ Return your evaluation as two scores from 1 (poor) to 5 (excellent), and a brief
 
 Format:
 Relevance: <score> - <justification>
+
 Consistency: <score> - <justification>
 
 Summary Answers:
