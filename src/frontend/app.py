@@ -10,13 +10,22 @@ import asyncio
 
 sys.path.append("src")
 from aneval.etl.news_summarizer_etl import run_etl, OUTPUT_PATH
-from aneval.prompts.judge import LLM_JUDGE_PROMPT
+from aneval.prompts.judge import LLM_JUDGE_PROMPT, LLM_JUDGE_COMPARE_PROMPT
 from aneval.prompts.summeval import (
     COHERENCE_PROMPT,
     CONSISTENCY_PROMPT,
     FLUENCY_PROMPT,
     RELEVANCE_PROMPT,
 )
+
+def evaluate_summary_vs_article(llm, summary_answers, article_answers, compare_prompt_template):
+    prompt = compare_prompt_template.format(
+        summary_answers="\n".join(f"{i+1}. {a}" for i, a in enumerate(summary_answers)),
+        article_answers="\n".join(f"{i+1}. {a}" for i, a in enumerate(article_answers)),
+    )
+    # Use the same LLM as for the Q&A (Gemini)
+    return llm.answer_question(prompt, "")   
+
 st.set_page_config(page_title="Stock News", layout="wide")
 
 st.markdown(
@@ -82,6 +91,13 @@ def send_to_llm_judge(article_obj):
     st.session_state["judge_title"] = article_obj.title
     st.session_state["geval_article_area"] = article_obj.full_text
     st.session_state["geval_summary_area"] = article_obj.summary
+
+    # --- Clear previous results and evaluation flags ---
+    st.session_state.pop("llm_judge_results", None)
+    st.session_state.pop("geval_results", None)
+    st.session_state["llm_judge_evaluating"] = False
+    st.session_state["geval_evaluating"] = False
+
     st.rerun()
 
 # --- Async runner for LLM-as-a-Judge (parallelizes all LLM calls) ---
@@ -160,18 +176,24 @@ with tabs[1]:
             summary_answers, article_answers = asyncio.run(
                 run_llm_judge_parallel(llm, summary, article, questions, judge_prompt_text)
             )
+            # --- Evaluate summary vs article using the answers ---
+            compare_result = evaluate_summary_vs_article(
+                llm, summary_answers, article_answers, LLM_JUDGE_COMPARE_PROMPT
+            )
             st.session_state["llm_judge_results"] = {
                 "questions": questions,
                 "summary_answers": summary_answers,
                 "article_answers": article_answers,
+                "compare_result": compare_result,
             }
             st.session_state["llm_judge_title"] = st.session_state.get("judge_title", "")
             st.session_state["llm_judge_evaluating"] = False
-            st.rerun()()
+            st.rerun()
     elif "llm_judge_results" in st.session_state:
         questions = st.session_state["llm_judge_results"]["questions"]
         summary_answers = st.session_state["llm_judge_results"]["summary_answers"]
         article_answers = st.session_state["llm_judge_results"]["article_answers"]
+        compare_result = st.session_state["llm_judge_results"].get("compare_result", "")
         judge_prompt = st.session_state.get("judge_prompt_area", LLM_JUDGE_PROMPT)
         for idx, q in enumerate(questions):
             with st.expander(f"Q{idx+1}: {q}"):
@@ -186,6 +208,11 @@ with tabs[1]:
                 st.info(summary_answers[idx])
                 st.markdown("**Article Answer:**")
                 st.success(article_answers[idx])
+        # --- Display the LLM's relevance/consistency evaluation at the bottom ---
+        if compare_result:
+            st.markdown("---")
+            st.markdown("#### LLM Evaluation of Summary vs Article (based on answers):")
+            st.info(compare_result)
     else:
         st.info("No LLM-as-a-Judge results yet. Run an evaluation in the sidebar.")
 

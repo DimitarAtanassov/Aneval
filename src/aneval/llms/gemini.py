@@ -41,4 +41,4 @@ class GeminiLLM:
             ticker=article.ticker,
             full_text=article.full_text,
             summary=summary
-        )
+        ) 
